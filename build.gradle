@@ -1,0 +1,69 @@
+apply plugin: 'java'
+apply plugin: 'idea'
+apply plugin: 'eclipse'
+
+group = "com.nuaavee.nosql"
+version = "0.0.1"
+
+repositories {
+  mavenLocal()
+  mavenCentral()
+  maven {
+    url "https://repository.cloudera.com/artifactory/cloudera-repos/"
+  }
+}
+
+sourceCompatibility = 1.7
+targetCompatibility = 1.7
+
+configurations {
+  provided
+  provided.extendsFrom(compile)
+}
+
+sourceSets {
+  main {
+    compileClasspath += configurations.provided
+  }
+}
+
+ext.hadoopVersion = "2.0.0-cdh4.5.0"
+ext.hbaseVersion = "0.94.6-cdh4.5.0"
+
+dependencies {
+  provided "org.apache.hadoop:hadoop-client:${hadoopVersion}"
+  provided "org.apache.hbase:hbase:${hbaseVersion}"
+}
+
+jar {
+  from configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+  manifest {
+    attributes 'Main-Class': 'com.nuaavee.nosql.Driver'
+  }
+}
+
+idea {
+  module {
+    jdkName = '1.7'
+
+    inheritOutputDirs = false
+    outputDir = file("${buildDir}/idea-classes")
+    testOutputDir = file("${buildDir}/idea-test-classes")
+
+    scopes.PROVIDED.plus += [configurations.provided]
+
+    downloadJavadoc = true
+    downloadSources = true
+  }
+}
+
+eclipse {
+  // Ensure Eclipse build output appears in build directory
+  classpath {
+    defaultOutputDir = file("${buildDir}/eclipse-classes")
+  }
+}
+
+task wrapper(type: Wrapper) {
+  gradleVersion = '2.1'
+}
