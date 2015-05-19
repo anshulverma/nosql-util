@@ -17,9 +17,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.nuaavee.nosql.filter.MissingColumnFilter;
 
-public class InvalidEntityLocator extends Configured implements Tool {
+public class Locator extends Configured implements Tool {
 
-  private static final Logger LOG = LoggerFactory.getLogger(InvalidEntityLocator.class);
+  private static final Logger LOG = LoggerFactory.getLogger(Locator.class);
   private static final String FAMILY_NAME = Parameters.getName("family_name");
   private static final String SEARCH_COLUMN_NAME = Parameters.getName("search_column");
   private static final String CONSTANT_COLUMN_NAME = Parameters.getName("constant_column");
@@ -50,7 +50,7 @@ public class InvalidEntityLocator extends Configured implements Tool {
     String constantColumn = args[5];
 
     Job job = Job.getInstance(conf, "locate invalid entities for " + prefix);
-    job.setJarByClass(EntityDetailExporter.class);
+    job.setJarByClass(Exporter.class);
 
     TableMapReduceUtil.initTableMapperJob(tableName, prepareScan(family, searchColumn),
       InvalidEntityMapper.class, ImmutableBytesWritable.class, Result.class, job);

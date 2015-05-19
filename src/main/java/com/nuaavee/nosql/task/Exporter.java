@@ -23,9 +23,9 @@ import org.apache.hadoop.util.Tool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class EntityDetailExporter extends Configured implements Tool {
+public class Exporter extends Configured implements Tool {
 
-  private static final Logger LOG = LoggerFactory.getLogger(InvalidEntityLocator.class);
+  private static final Logger LOG = LoggerFactory.getLogger(Locator.class);
   private static final String FAMILY_NAME = Parameters.getName("family_name");
 
   public static class EntityExportMapper extends TableMapper<Text, Text> {
@@ -55,7 +55,7 @@ public class EntityDetailExporter extends Configured implements Tool {
 
   public Job createSubmittableJob(Configuration conf, String[] args) throws IOException {
     Job job = Job.getInstance(conf, "lowes entity detail export");
-    job.setJarByClass(EntityDetailExporter.class);
+    job.setJarByClass(Exporter.class);
 
     LOG.warn("arguments: {}", args);
     String tableName = args[1];
