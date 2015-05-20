@@ -139,7 +139,7 @@ public class Exporter extends Configured implements Tool {
   }
 
   public Job createSubmittableJob(Configuration conf, String[] args) throws IOException {
-    Job job = Job.getInstance(conf, "lowes entity detail export");
+    Job job = Job.getInstance(conf, "entity detail export");
     job.setJarByClass(Exporter.class);
 
     LOG.warn("arguments: {}", args);
