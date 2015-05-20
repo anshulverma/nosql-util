@@ -27,29 +27,91 @@ public class Exporter extends Configured implements Tool {
 
   private static final Logger LOG = LoggerFactory.getLogger(Locator.class);
   private static final String FAMILY_NAME = Parameters.getName("family_name");
+  private static final String EXPORT_TYPE = Parameters.getName("export_type");
 
   public static class EntityExportMapper extends TableMapper<Text, Text> {
     @Override
     protected void map(ImmutableBytesWritable key, Result value, Context context)
       throws IOException, InterruptedException {
       String family = context.getConfiguration().get(FAMILY_NAME);
+      String exportType = context.getConfiguration().get(EXPORT_TYPE);
       NavigableMap<byte[], byte[]> familyMap = value.getFamilyMap(Bytes.toBytes(family));
-      StringBuilder details = new StringBuilder();
+      DetailsExport detailsExport = getDetailsExport(exportType);
       for (Map.Entry<byte[], byte[]> entry : familyMap.entrySet()) {
-        if (details.length() > 0) {
-          details.append(',');
-        }
-        details
-          .append(tokenize(entry.getKey()))
-          .append(':')
-          .append(tokenize(entry.getValue()));
+        detailsExport.write(entry.getKey(), entry.getValue());
       }
       context.write(new Text(""),
-        new Text(Bytes.toBytes('{' + details.toString() + '}')));
+        new Text(detailsExport.export()));
     }
 
-    private String tokenize(byte[] bytes) {
-      return '"' + Bytes.toString(bytes).replaceAll("\"", "\\\\\"") + '"';
+    private DetailsExport getDetailsExport(String exportType) {
+      switch (exportType) {
+        case "json":
+          return new JSONDetailsExport();
+        case "csv":
+          return new CSVDetailsExport();
+        default:
+          throw new IllegalArgumentException("unknown export type: " + exportType);
+      }
+    }
+
+    private abstract class DetailsExport {
+      private static final String ATTRIBUTE_SEPARATOR = ",";
+
+      private String fieldSeparator;
+
+      private final StringBuilder details;
+
+      DetailsExport(String fieldSeparator) {
+        this.fieldSeparator = fieldSeparator;
+
+        this.details = new StringBuilder();
+      }
+
+      final void write(byte[] key, byte[] value) {
+        if (details.length() > 0) {
+          details.append(ATTRIBUTE_SEPARATOR);
+        }
+        details
+          .append(tokenize(Bytes.toString(key).replaceAll("\"", "\\\\\"")))
+          .append(fieldSeparator)
+          .append(tokenize(Bytes.toString(value).replaceAll("\"", "\\\\\"")));
+      }
+
+      final byte[] export() {
+        return Bytes.toBytes(wrap(details.toString()));
+      }
+
+      protected String tokenize(String str) {
+        return str;
+      }
+
+      protected String wrap(String exported) {
+        return exported;
+      }
+    }
+
+    private class JSONDetailsExport extends DetailsExport {
+
+      private JSONDetailsExport() {
+        super(",");
+      }
+
+      @Override
+      public String tokenize(String str) {
+        return '"' + str + '"';
+      }
+
+      @Override
+      protected String wrap(String exported) {
+        return "{" + exported + "}";
+      }
+    }
+
+    private class CSVDetailsExport extends DetailsExport {
+      private CSVDetailsExport() {
+        super("#");
+      }
     }
   }
 
@@ -61,6 +123,7 @@ public class Exporter extends Configured implements Tool {
     String tableName = args[1];
     String family = args[2];
     String prefix = args[3];
+    String exportType = args[4];
 
     TableMapReduceUtil.initTableMapperJob(tableName, prepareScan(family, prefix),
       EntityExportMapper.class, Text.class, Text.class, job);
@@ -76,6 +139,7 @@ public class Exporter extends Configured implements Tool {
     FileOutputFormat.setOutputPath(job, outputDir);
 
     job.getConfiguration().set(FAMILY_NAME, family);
+    job.getConfiguration().set(EXPORT_TYPE, exportType);
 
     return job;
   }
