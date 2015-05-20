@@ -44,8 +44,9 @@ public class Exporter extends Configured implements Tool {
       for (Map.Entry<byte[], byte[]> entry : familyMap.entrySet()) {
         detailsExport.write(entry.getKey(), entry.getValue());
       }
-      context.write(new Text(""),
-        new Text(detailsExport.export()));
+      if (detailsExport.canExport()) {
+        context.write(new Text(""), new Text(detailsExport.export()));
+      }
     }
 
     private DetailsExport getDetailsExport(String exportType) {
@@ -82,16 +83,26 @@ public class Exporter extends Configured implements Tool {
 
       final byte[] export() {
         StringBuilder exported = new StringBuilder();
+        List<String> idValue = details.remove("id");
+        append(exported, "id", idValue);
         for (Map.Entry<String, List<String>> detailEntry : details.entrySet()) {
           if (exported.length() > 0) {
             exported.append(ATTRIBUTE_SEPARATOR);
           }
-          exported
-            .append(tokenize(detailEntry.getKey()))
-            .append(fieldSeparator)
-            .append(tokenize(Joiner.on(fieldSeparator).join(detailEntry.getValue())));
+          append(exported, detailEntry.getKey(), detailEntry.getValue());
         }
         return Bytes.toBytes(wrap(exported.toString()));
+      }
+
+      private void append(StringBuilder exported, String key, List<String> value) {
+        exported
+          .append(tokenize(key))
+          .append(fieldSeparator)
+          .append(tokenize(Joiner.on(fieldSeparator).join(value)));
+      }
+
+      public boolean canExport() {
+        return details.containsKey("id");
       }
 
       protected String tokenize(String str) {
