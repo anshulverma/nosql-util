@@ -1,6 +1,9 @@
 package com.nuaavee.nosql.task;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import org.apache.hadoop.conf.Configuration;
@@ -22,6 +25,7 @@ import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.google.common.base.Joiner;
 
 public class Exporter extends Configured implements Tool {
 
@@ -60,26 +64,34 @@ public class Exporter extends Configured implements Tool {
 
       private String fieldSeparator;
 
-      private final StringBuilder details;
+      private final Map<String, List<String>> details = new HashMap<>();
 
       DetailsExport(String fieldSeparator) {
         this.fieldSeparator = fieldSeparator;
-
-        this.details = new StringBuilder();
       }
 
       final void write(byte[] key, byte[] value) {
-        if (details.length() > 0) {
-          details.append(ATTRIBUTE_SEPARATOR);
+        String keyToken = Bytes.toString(key).replaceAll("\"", "\\\\\"").split(":")[0];
+        List<String> valueList = details.get(keyToken);
+        if (valueList == null) {
+          valueList = new ArrayList<>();
+          details.put(keyToken, valueList);
         }
-        details
-          .append(tokenize(Bytes.toString(key).replaceAll("\"", "\\\\\"")))
-          .append(fieldSeparator)
-          .append(tokenize(Bytes.toString(value).replaceAll("\"", "\\\\\"")));
+        valueList.add(Bytes.toString(value).replaceAll("\"", "\\\\\""));
       }
 
       final byte[] export() {
-        return Bytes.toBytes(wrap(details.toString()));
+        StringBuilder exported = new StringBuilder();
+        for (Map.Entry<String, List<String>> detailEntry : details.entrySet()) {
+          if (exported.length() > 0) {
+            exported.append(ATTRIBUTE_SEPARATOR);
+          }
+          exported
+            .append(tokenize(detailEntry.getKey()))
+            .append(fieldSeparator)
+            .append(tokenize(Joiner.on(fieldSeparator).join(detailEntry.getValue())));
+        }
+        return Bytes.toBytes(wrap(exported.toString()));
       }
 
       protected String tokenize(String str) {
