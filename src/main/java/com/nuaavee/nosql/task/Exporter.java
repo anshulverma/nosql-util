@@ -138,15 +138,15 @@ public class Exporter extends Configured implements Tool {
   }
 
   public Job createSubmittableJob(Configuration conf, String[] args) throws IOException {
-    Job job = Job.getInstance(conf, "entity detail export");
-    job.setJarByClass(Exporter.class);
-
     LOG.warn("arguments: {}", args);
     String tableName = args[1];
     String family = args[2];
     String startRow = args[3];
     String stopRow = args[4];
     String exportType = args[5];
+
+    Job job = Job.getInstance(conf, "export rows from " + startRow + " to " + stopRow);
+    job.setJarByClass(Exporter.class);
 
     TableMapReduceUtil.initTableMapperJob(tableName, prepareScan(family, startRow, stopRow),
       RowExportMapper.class, Text.class, Text.class, job);
