@@ -13,7 +13,6 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.Scan;
-import org.apache.hadoop.hbase.filter.PrefixFilter;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil;
 import org.apache.hadoop.hbase.mapreduce.TableMapper;
@@ -145,10 +144,11 @@ public class Exporter extends Configured implements Tool {
     LOG.warn("arguments: {}", args);
     String tableName = args[1];
     String family = args[2];
-    String prefix = args[3];
-    String exportType = args[4];
+    String startRow = args[3];
+    String stopRow = args[4];
+    String exportType = args[5];
 
-    TableMapReduceUtil.initTableMapperJob(tableName, prepareScan(family, prefix),
+    TableMapReduceUtil.initTableMapperJob(tableName, prepareScan(family, startRow, stopRow),
       EntityExportMapper.class, Text.class, Text.class, job);
     job.setNumReduceTasks(0);
 
@@ -156,7 +156,7 @@ public class Exporter extends Configured implements Tool {
     job.setOutputValueClass(Text.class);
     job.setOutputFormatClass(SequenceFileOutputFormat.class);
 
-    Path outputDir = new Path(new Path("/tmp/exported/" + tableName), prefix.replaceAll(":", "_"));
+    Path outputDir = new Path(new Path("/tmp/exported/" + tableName), startRow.replaceAll(":", "_"));
     FileSystem fs = FileSystem.get(conf);
     fs.delete(outputDir, true);
     FileOutputFormat.setOutputPath(job, outputDir);
@@ -167,12 +167,13 @@ public class Exporter extends Configured implements Tool {
     return job;
   }
 
-  private Scan prepareScan(String family, String prefix) throws IOException {
+  private Scan prepareScan(String family, String startRow, String stopRow) throws IOException {
     Scan scan = new Scan();
     scan.addFamily(Bytes.toBytes(family));
     scan.setCacheBlocks(false);
     scan.setTimeRange(0, HConstants.LATEST_TIMESTAMP);
-    scan.setFilter(new PrefixFilter(Bytes.toBytes(prefix)));
+    scan.setStartRow(Bytes.toBytes(startRow));
+    scan.setStartRow(Bytes.toBytes(stopRow));
     return scan;
   }
 
