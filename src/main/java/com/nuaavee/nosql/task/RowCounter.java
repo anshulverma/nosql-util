@@ -32,14 +32,14 @@ public class RowCounter extends Configured implements Tool {
   }
 
   public Job createSubmittableJob(Configuration conf, String[] args) throws IOException {
-    Job job = Job.getInstance(conf, "entity detail export");
-    job.setJarByClass(RowCounter.class);
-
     LOG.warn("arguments: {}", args);
     String tableName = args[1];
     String family = args[2];
     String startRow = args[3];
     String stopRow = args[4];
+
+    Job job = Job.getInstance(conf, "count rows from " + startRow + " to " + stopRow);
+    job.setJarByClass(RowCounter.class);
 
     TableMapReduceUtil.initTableMapperJob(tableName, prepareScan(family, startRow, stopRow),
       RowCountMapper.class, NullWritable.class, NullWritable.class, job);
