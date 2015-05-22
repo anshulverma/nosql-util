@@ -1,9 +1,14 @@
-*.class
-*~
-*#*
-build/
+# SCM
+.git/
+
+# Gradle
 .gradle/
-gradle/
+
+# IDE
+.idea/
 *.iml
 *.ipr
 *.iws
+
+# Build artifacts
+build/
