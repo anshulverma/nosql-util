@@ -12,6 +12,7 @@ import org.apache.hadoop.hbase.mapreduce.TableMapper;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.lib.output.NullOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,6 +45,7 @@ public class RowCounter extends Configured implements Tool {
     TableMapReduceUtil.initTableMapperJob(tableName, prepareScan(family, startRow, stopRow),
       RowCountMapper.class, NullWritable.class, NullWritable.class, job);
     job.setNumReduceTasks(0);
+    job.setOutputFormatClass(NullOutputFormat.class);
 
     job.getConfiguration().set(FAMILY_NAME, family);
 
