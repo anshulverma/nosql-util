@@ -32,7 +32,7 @@ public class Exporter extends Configured implements Tool {
   private static final String FAMILY_NAME = Parameters.getName("family_name");
   private static final String EXPORT_TYPE = Parameters.getName("export_type");
 
-  public static class EntityExportMapper extends TableMapper<Text, Text> {
+  public static class RowExportMapper extends TableMapper<Text, Text> {
     @Override
     protected void map(ImmutableBytesWritable key, Result value, Context context)
       throws IOException, InterruptedException {
@@ -149,7 +149,7 @@ public class Exporter extends Configured implements Tool {
     String exportType = args[5];
 
     TableMapReduceUtil.initTableMapperJob(tableName, prepareScan(family, startRow, stopRow),
-      EntityExportMapper.class, Text.class, Text.class, job);
+      RowExportMapper.class, Text.class, Text.class, job);
     job.setNumReduceTasks(0);
 
     job.setOutputKeyClass(Text.class);
