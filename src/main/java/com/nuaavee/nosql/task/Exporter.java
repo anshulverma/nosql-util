@@ -173,7 +173,7 @@ public class Exporter extends Configured implements Tool {
     scan.setCacheBlocks(false);
     scan.setTimeRange(0, HConstants.LATEST_TIMESTAMP);
     scan.setStartRow(Bytes.toBytes(startRow));
-    scan.setStartRow(Bytes.toBytes(stopRow));
+    scan.setStopRow(Bytes.toBytes(stopRow));
     return scan;
   }
 
